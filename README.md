@@ -1,0 +1,1 @@
+Default I2C Pins Devkit M1 SDA: 8 SCL: 9
