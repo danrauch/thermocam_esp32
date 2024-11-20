@@ -23,13 +23,17 @@ public:
 
     constexpr T &operator()(int i, int j)
     {
-        assert(j < COLS && i < ROWS);
+        assert(i < ROWS);
+        assert(j < COLS);
+
         return this->at(i + ROWS * j);
     }
 
     constexpr const T &operator()(int i, int j) const
     {
-        assert(j < COLS && i < ROWS);
+        assert(i < ROWS);
+        assert(j < COLS);
+
         return this->at(i + ROWS * j);
     }
 

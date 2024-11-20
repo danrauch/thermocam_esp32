@@ -59,7 +59,7 @@ public:
     Color lerp(const Color &other, float fraction) { return Color::lerp(*this, other, fraction); }
 
     Color() = default;
-    Color(uint8_t r, uint8_t g, uint8_t b);
+    Color(int r, int g, int b);
     friend Color operator*(double factor, const Color &color)
     {
         return Color(color.r() * factor, color.g() * factor, color.b() * factor);

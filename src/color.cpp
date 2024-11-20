@@ -4,9 +4,9 @@ namespace thermocam::color {
 
 // private
 
-Color::Color(uint8_t r, uint8_t g, uint8_t b) : _r(r),
-                                                _g(g),
-                                                _b(b)
+Color::Color(int r, int g, int b) : _r(std::max(std::min(r, 255), 0)),
+                                    _g(std::max(std::min(g, 255), 0)),
+                                    _b(std::max(std::min(b, 255), 0))
 {
 }
 
@@ -53,9 +53,11 @@ Color Color::lerp(const Color &color1, const Color &color2, float fraction)
         return color2;
     }
 
-    float r = ((float)color2.r() - (float)color1.r()) * fraction + (float)color1.r();
-    float g = ((float)color2.g() - (float)color1.g()) * fraction + (float)color1.g();
-    float b = ((float)color2.b() - (float)color1.b()) * fraction + (float)color1.b();
+    return (color2 - color1) * fraction + color1;
+
+    int r = (int)((float)(std::max(color2.r() - color1.r(), 0)) * fraction + (float)color1.r());
+    int g = (int)((float)(std::max(color2.g() - color1.g(), 0)) * fraction + (float)color1.g());
+    int b = (int)((float)(std::max(color2.b() - color1.b(), 0)) * fraction + (float)color1.b());
 
     return Color(r, g, b);
 }
