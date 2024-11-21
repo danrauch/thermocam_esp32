@@ -19,8 +19,8 @@ constexpr uint16_t DISPLAYED_IMAGE_HEIGHT = MLX_SENSOR_HEIGHT * INTERPOLATION_FA
 const uint8_t COLOR_BLEND_STEPS = 64;
 
 const auto CURRENT_REFRESH_RATE = Mlx90640RefreshRate::MLX90640_4_HZ;
-const auto MIN_TEMP_COLOR = Color::create_from_enum(CommonColor::BLACK);
-const auto MAX_TEMP_COLOR = Color::create_from_enum(CommonColor::RED);
+const auto MIN_TEMP_COLOR = RGB8Color::create_from_enum(CommonColor::BLACK);
+const auto MAX_TEMP_COLOR = RGB8Color::create_from_enum(CommonColor::RED);
 const float DEFAULT_MANUAL_MIN_TEMP = 0.0;
 const float DEFAULT_MANUAL_MAX_TEMP = 40.0;
 
@@ -28,8 +28,8 @@ const float DEFAULT_MANUAL_MAX_TEMP = 40.0;
 Adafruit_MLX90640 mlx;
 // buffer for full frame of temperatures
 FixedSizeMatrix<float, MLX_SENSOR_WIDTH, MLX_SENSOR_HEIGHT> raw_frame;
-FixedSizeMatrix<Color, MLX_SENSOR_WIDTH, MLX_SENSOR_HEIGHT> rgb_frame;
-FixedSizeMatrix<Color, DISPLAYED_IMAGE_WIDTH, DISPLAYED_IMAGE_HEIGHT> displayed_frame;
+FixedSizeMatrix<RGB8Color, MLX_SENSOR_WIDTH, MLX_SENSOR_HEIGHT> rgb_frame;
+FixedSizeMatrix<RGB8Color, DISPLAYED_IMAGE_WIDTH, DISPLAYED_IMAGE_HEIGHT> displayed_frame;
 uint32_t frame_index = 0;
 bool autoscale_active = true;
 float min_temp = DEFAULT_MANUAL_MIN_TEMP;
@@ -58,7 +58,7 @@ void setup()
     mlx.setResolution(Mlx90640BitResolution::MLX90640_ADC_18BIT);
     mlx.setRefreshRate(CURRENT_REFRESH_RATE);
 
-    auto color_legend = Color::discrete_blend(MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
+    auto color_legend = RGB8Color::discrete_blend(MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
     // TODO: draw legend to screen
 }
 
@@ -88,7 +88,7 @@ void loop()
     size_t rgb_array_index = 0;
     for (const auto &temp_at_pixel : raw_frame) {
         float normalized_temp = normalize(min_temp, max_temp, temp_at_pixel);
-        rgb_frame[rgb_array_index] = Color::lerp(MIN_TEMP_COLOR, MAX_TEMP_COLOR, normalized_temp);
+        rgb_frame[rgb_array_index] = RGB8Color::lerp(MIN_TEMP_COLOR, MAX_TEMP_COLOR, normalized_temp);
         rgb_array_index += 1;
     }
 

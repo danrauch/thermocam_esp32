@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <array>
 #include <ostream>
 #include <stdint.h>
@@ -32,24 +33,24 @@ enum class CommonColor : uint32_t
     MAGENTA = encode_rgb_to_int(255, 0, 255),
 };
 
-class Color final
+class RGB8Color final
 {
 public:
-    static Color create_from_enum(CommonColor color);
-    static Color create_from_rgb(uint8_t r, uint8_t g, uint8_t b);
+    static RGB8Color create_from_enum(CommonColor color);
+    static RGB8Color create_from_rgb(uint8_t r, uint8_t g, uint8_t b);
 
-    static Color lerp(const Color &color1, const Color &color2, float fraction);
-    static std::vector<Color> discrete_blend(const Color &color1, const Color &color2, uint32_t steps);
+    static RGB8Color lerp(const RGB8Color &from_color, const RGB8Color &to_color, float fraction);
+    static std::vector<RGB8Color> discrete_blend(const RGB8Color &from_color, const RGB8Color &to_color, uint32_t steps);
 
-    Color operator+(const Color &rhs) const;
-    Color operator-(const Color &rhs) const;
-    Color operator*(float rhs) const;
-    Color operator*(double rhs) const;
+    RGB8Color operator+(const RGB8Color &rhs) const;
+    RGB8Color operator-(const RGB8Color &rhs) const;
+    RGB8Color operator*(float rhs) const;
+    RGB8Color operator*(double rhs) const;
     operator std::string() const
     {
         return "(" + std::to_string(_r) + " " + std::to_string(_g) + " " + std::to_string(_b) + ")";
     }
-    friend std::ostream &operator<<(std::ostream &out, const Color &obj)
+    friend std::ostream &operator<<(std::ostream &out, const RGB8Color &obj)
     {
         return out << static_cast<std::string>(obj);
     }
@@ -59,16 +60,16 @@ public:
     uint8_t b() const { return _b; }
     RGBArray rgb_array() const { return {_r, _g, _b}; }
 
-    Color lerp(const Color &other, float fraction) { return Color::lerp(*this, other, fraction); }
+    RGB8Color lerp(const RGB8Color &other, float fraction) { return RGB8Color::lerp(*this, other, fraction); }
 
-    Color() = default;
-    Color(int r, int g, int b);
-    friend Color operator*(double factor, const Color &color)
+    friend RGB8Color operator*(double factor, const RGB8Color &color)
     {
-        return Color(color.r() * factor, color.g() * factor, color.b() * factor);
+        return RGB8Color(color.r() * factor, color.g() * factor, color.b() * factor);
     }
 
+    RGB8Color() = default;  // Need default constructor so it can be in std::array
 private:
+    RGB8Color(int r, int g, int b);
     uint8_t _r, _g, _b;
 };
 
