@@ -1,4 +1,7 @@
+#pragma once
+
 #include <array>
+#include <ostream>
 #include <stdint.h>
 #include <tuple>
 #include <vector>
@@ -14,7 +17,7 @@ constexpr uint32_t encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b)
 
 constexpr RGBArray decode_int_to_rgb(uint32_t color)
 {
-    return { (uint8_t)(color & 0x00FF0000 >> 16), (uint8_t)(color & 0x0000FF00 >> 8), (uint8_t)(color & 0x000000FF)};
+    return {(uint8_t)((color & 0x00FF0000) >> 16), (uint8_t)((color & 0x0000FF00) >> 8), (uint8_t)(color & 0x000000FF)};
 }
 
 enum class CommonColor : uint32_t

@@ -54,12 +54,6 @@ Color Color::lerp(const Color &color1, const Color &color2, float fraction)
     }
 
     return (color2 - color1) * fraction + color1;
-
-    int r = (int)((float)(std::max(color2.r() - color1.r(), 0)) * fraction + (float)color1.r());
-    int g = (int)((float)(std::max(color2.g() - color1.g(), 0)) * fraction + (float)color1.g());
-    int b = (int)((float)(std::max(color2.b() - color1.b(), 0)) * fraction + (float)color1.b());
-
-    return Color(r, g, b);
 }
 
 std::vector<Color> Color::discrete_blend(const Color &color1, const Color &color2, uint32_t steps)
