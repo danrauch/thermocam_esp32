@@ -6,7 +6,8 @@
 #include "color.h"
 #include "fixed_matrix.h"
 #include "upscaling.h"
-#include "utils.h"
+#include "algorithms.h"
+#include "mlx_utils.h"
 
 using namespace thermocam;
 using namespace thermocam::color;
@@ -87,7 +88,7 @@ void loop()
 
     size_t rgb_array_index = 0;
     for (const auto &temp_at_pixel : raw_frame) {
-        float normalized_temp = normalize(min_temp, max_temp, temp_at_pixel);
+        float normalized_temp = algorithms::normalize(min_temp, max_temp, temp_at_pixel);
         rgb_frame[rgb_array_index] = RGB8Color::lerp(MIN_TEMP_COLOR, MAX_TEMP_COLOR, normalized_temp);
         rgb_array_index += 1;
     }

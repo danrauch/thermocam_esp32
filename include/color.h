@@ -44,6 +44,7 @@ public:
 
     RGB8Color operator+(const RGB8Color &rhs) const;
     RGB8Color operator-(const RGB8Color &rhs) const;
+    RGB8Color operator*(const RGB8Color &rhs) const;
     RGB8Color operator*(float rhs) const;
     RGB8Color operator*(double rhs) const;
     operator std::string() const
