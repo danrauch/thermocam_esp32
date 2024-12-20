@@ -13,6 +13,11 @@ void tearDown(void)
     // clean stuff up here
 }
 
+void test_if_size_still_trivially_copyable(void)
+{
+    TEST_ASSERT_EQUAL_INT64(3, sizeof(RGB8Color));
+}
+
 void test_encode_rgb_to_int(void)
 {
     TEST_ASSERT_EQUAL_INT32(0, encode_rgb_to_int(0, 0, 0));
@@ -169,6 +174,7 @@ void test_discrete_blend(void)
 int runUnityTests(void)
 {
     UNITY_BEGIN();
+    RUN_TEST(test_if_size_still_trivially_copyable);
     RUN_TEST(test_encode_rgb_to_int);
     RUN_TEST(test_common_color_enum);
     RUN_TEST(test_decode_int_to_rgb);
@@ -183,11 +189,7 @@ int runUnityTests(void)
     return UNITY_END();
 }
 
-// WARNING!!! PLEASE REMOVE UNNECESSARY MAIN IMPLEMENTATIONS //
 
-/**
- * For native dev-platform or for some embedded frameworks
- */
 int main(void)
 {
     return runUnityTests();

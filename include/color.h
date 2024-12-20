@@ -11,6 +11,14 @@ namespace thermocam::color {
 
 using RGBArray = std::array<uint8_t, 3>;
 
+constexpr uint16_t convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) {
+    uint16_t r5 = (r >> 3) & 0x1F; // 5 bit for red
+    uint16_t g6 = (g >> 2) & 0x3F; // 6 bit for green
+    uint16_t b5 = (b >> 3) & 0x1F; // 5 bit for blue
+
+    return (r5 << 11) | (g6 << 5) | b5;
+}
+
 constexpr uint32_t encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b)
 {
     return r << 16 | g << 8 | b;
@@ -73,5 +81,17 @@ private:
     RGB8Color(int r, int g, int b);
     uint8_t _r, _g, _b;
 };
+
+
+namespace common_colors {
+    inline const auto BLACK = RGB8Color::create_from_enum(CommonColor::BLACK);
+    inline const auto WHITE = RGB8Color::create_from_enum(CommonColor::WHITE);
+    inline const auto RED = RGB8Color::create_from_enum(CommonColor::RED);
+    inline const auto GREEN = RGB8Color::create_from_enum(CommonColor::GREEN);
+    inline const auto BLUE = RGB8Color::create_from_enum(CommonColor::BLUE);
+    inline const auto YELLOW = RGB8Color::create_from_enum(CommonColor::YELLOW);
+    inline const auto CYAN = RGB8Color::create_from_enum(CommonColor::CYAN);
+    inline const auto MAGENTA = RGB8Color::create_from_enum(CommonColor::MAGENTA);
+}
 
 } // namespace thermocam::color
