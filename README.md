@@ -1,4 +1,6 @@
 Default I2C Pins Devkit M1 SDA: 8 SCL: 9
+How to custom: https://randomnerdtutorials.com/esp32-i2c-communication-arduino-ide/
+Changed to 6&7 so on-board LED is off
 
 TFT Bugfix
 
