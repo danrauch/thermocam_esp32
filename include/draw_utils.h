@@ -25,13 +25,18 @@ void draw_live_ui(TFT_eSPI &tft, ThermoDisplaySettings &tds, ThermoImageStats &t
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
     tft.drawNumber(tis.frame_index, 3, 185, 2);
 
-    if (tds.autoscale_active) {
-        return; // TODO
-    }
-
     std::stringstream min_temp_ss, max_temp_ss;
     min_temp_ss << std::fixed << std::setprecision(1) << tis.min_temp;
     max_temp_ss << std::fixed << std::setprecision(1) << tis.max_temp;
+
+    if (tds.autoscale_active) {
+        tft.drawString("A", 230, 185, 2);
+        tft.setTextColor(MIN_TFT_TEMP_COLOR, TFT_TRANSPARENT);
+        tft.drawString(min_temp_ss.str().c_str(), 3, 222, 2);
+        tft.setTextColor(MAX_TFT_TEMP_COLOR, TFT_TRANSPARENT);
+        tft.drawString(max_temp_ss.str().c_str(), 210, 222, 2);
+        return;
+    }
 
     int min_temp_x_pos = static_cast<int>(240.0f * algorithms::normalize(
                                                        tds.min_scale_temp, tds.max_scale_temp, tis.min_temp));
@@ -92,10 +97,9 @@ void draw_thermo_image(TFT_eSPI &tft, UpscaledRGBThermoImage &upscaled_frame,
     }
 }
 
-template <typename T, size_t ROWS, size_t COLS>
-void draw_cross_into_image(int row, int col, color::RGB8Color color, FixedSizeMatrix<T, ROWS, COLS> &image)
+void draw_cross_into_image(int row, int col, color::RGB8Color color, UpscaledRGBThermoImage &image)
 {
-    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
+    if (row < 0 || row >= image.rows() || col < 0 || col >= image.cols()) {
         return;
     }
 
@@ -105,10 +109,10 @@ void draw_cross_into_image(int row, int col, color::RGB8Color color, FixedSizeMa
     if (row >= 2) {
         image(row - 2, col) = color;
     }
-    if (row < ROWS - 1) {
+    if (row < image.rows() - 1) {
         image(row + 1, col) = color;
     }
-    if (row < ROWS - 2) {
+    if (row < image.rows() - 2) {
         image(row + 2, col) = color;
     }
     image(row, col) = color;
@@ -118,16 +122,15 @@ void draw_cross_into_image(int row, int col, color::RGB8Color color, FixedSizeMa
     if (col >= 2) {
         image(row, col - 2) = color;
     }
-    if (col < COLS - 1) {
+    if (col < image.cols() - 1) {
         image(row, col + 1) = color;
     }
-    if (col < COLS - 2) {
+    if (col < image.cols() - 2) {
         image(row, col + 2) = color;
     }
 }
 
-template <typename T, size_t ROWS, size_t COLS>
-void insert_min_max_temp_crosses_into_image(FixedSizeMatrix<T, ROWS, COLS> &image, ThermoImageStats &tis,
+void insert_min_max_temp_crosses_into_image(UpscaledRGBThermoImage &image, ThermoImageStats &tis,
                                             int bilinear_interpolation_factor,
                                             color::RGB8Color min_cross_color, color::RGB8Color max_cross_color)
 {

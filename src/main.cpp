@@ -9,6 +9,7 @@
 
 #include "algorithms.h"
 #include "color.h"
+#include "debounced_pin.h"
 #include "debug_utils.h"
 #include "draw_utils.h"
 #include "fixed_matrix.h"
@@ -37,8 +38,9 @@ ThermoImageStats tis{.average_temp = 0.0,
                      .frame_index = 0};
 
 Adafruit_MLX90640 mlx;
-TFT_eSPI tft = TFT_eSPI();
-TwoWire mlx_i2c = TwoWire(0);
+TFT_eSPI tft;
+TwoWire mlx_i2c(0);
+DebouncedPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
 
 void setup()
 {
@@ -83,6 +85,11 @@ void setup()
 
 void loop()
 {
+    if (button1.readout() == PinState::HIGH_LEVEL) {
+        tds.autoscale_active = !tds.autoscale_active;
+        Serial.println("switch autoscale");
+    }
+
     if (mlx.getFrame(raw_frame.data()) != 0) {
         Serial.println("frame read failed");
         return;
@@ -94,6 +101,9 @@ void loop()
     if (tds.autoscale_active) {
         tds.min_scale_temp = tis.min_temp - 1.0;
         tds.max_scale_temp = tis.max_temp + 1.0;
+    } else {
+        tds.min_scale_temp = DEFAULT_MANUAL_MIN_TEMP;
+        tds.max_scale_temp = DEFAULT_MANUAL_MAX_TEMP;
     }
     if constexpr (DEBUG_OUTPUT) {
         Serial.println(debug_utils::generate_debug_string(tds, tis).c_str());

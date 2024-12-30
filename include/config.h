@@ -11,6 +11,7 @@ const bool DEBUG_OUTPUT = false;
 
 const uint8_t I2C_SDA = 6;
 const uint8_t I2C_SCL = 7;
+const uint8_t UI_BTN_PIN = 2;
 
 const uint8_t MLX_SENSOR_WIDTH = 32;
 const uint8_t MLX_SENSOR_HEIGHT = 24;
