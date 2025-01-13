@@ -8,6 +8,15 @@
 
 namespace thermocam::mlx_utils {
 
+std::string get_serial_number(Adafruit_MLX90640 &mlx)
+{
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0') << std::setw(4) << mlx.serialNumber[0] << '-' 
+                                        << std::setw(4) << mlx.serialNumber[1] << '-' 
+                                        << std::setw(4) << mlx.serialNumber[2];
+    return ss.str();
+}
+
 void update_thermo_image_stats_from_frame(ThermoImage &raw_frame, ThermoImageStats &tis)
 {
     tis.average_temp = std::accumulate(raw_frame.begin(), raw_frame.end(), 0.0f) / raw_frame.size();

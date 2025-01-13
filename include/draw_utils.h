@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cmath>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #include <TFT_eSPI.h>
 
@@ -30,6 +30,7 @@ void draw_live_ui(TFT_eSPI &tft, ThermoDisplaySettings &tds, ThermoImageStats &t
     max_temp_ss << std::fixed << std::setprecision(1) << tis.max_temp;
 
     if (tds.autoscale_active) {
+        tft.setTextColor(TFT_GREEN, TFT_TRANSPARENT);
         tft.drawString("A", 230, 185, 2);
         tft.setTextColor(MIN_TFT_TEMP_COLOR, TFT_TRANSPARENT);
         tft.drawString(min_temp_ss.str().c_str(), 3, 222, 2);
@@ -37,6 +38,9 @@ void draw_live_ui(TFT_eSPI &tft, ThermoDisplaySettings &tds, ThermoImageStats &t
         tft.drawString(max_temp_ss.str().c_str(), 210, 222, 2);
         return;
     }
+
+    tft.setTextColor(TFT_LIGHTGREY, TFT_TRANSPARENT);
+    tft.drawString("A", 230, 185, 2);
 
     int min_temp_x_pos = static_cast<int>(240.0f * algorithms::normalize(
                                                        tds.min_scale_temp, tds.max_scale_temp, tis.min_temp));
@@ -144,4 +148,4 @@ void insert_min_max_temp_crosses_into_image(UpscaledRGBThermoImage &image, Therm
                           max_cross_color, image);
 }
 
-} // namespace thermocam::draw
+} // namespace thermocam::draw_utils

@@ -9,8 +9,11 @@ namespace thermocam {
 
 const bool DEBUG_OUTPUT = false;
 
-const uint8_t I2C_SDA = 6;
-const uint8_t I2C_SCL = 7;
+const uint32_t SERIAL_BAUDRATE = 115200;
+
+const uint32_t I2C_FREQUENCY_IN_HZ = 1'000'000;
+const uint8_t I2C_SDA_PIN = 6;
+const uint8_t I2C_SCL_PIN = 7;
 const uint8_t UI_BTN_PIN = 2;
 
 const uint8_t MLX_SENSOR_WIDTH = 32;

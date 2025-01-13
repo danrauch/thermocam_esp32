@@ -7,6 +7,7 @@
 
 #include "config.h"
 
+#include "Arduino.h"
 #include "algorithms.h"
 #include "color.h"
 #include "debounced_pin.h"
@@ -40,56 +41,68 @@ ThermoImageStats tis{.average_temp = 0.0,
 Adafruit_MLX90640 mlx;
 TFT_eSPI tft;
 TwoWire mlx_i2c(0);
-DebouncedPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
+DebouncedPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN, 50, ReadoutMode::INTERRUPT);
 
-void setup()
+void init_tft(TFT_eSPI &tft)
 {
-    static_assert(TFT_WIDTH % COLOR_BLEND_STEPS == 0);
-
-    Serial.begin(115200);
-    while (!Serial)
-        delay(10);
-    delay(100);
-
     tft.init();
-
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
     tft.setTextSize(1);
+}
 
-    auto color_legend = RGB8Color::discrete_blend(MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
+void wait_for_serial()
+{
+    Serial.begin(SERIAL_BAUDRATE);
+    while (!Serial)
+        delay(10);
+    delay(100);
+}
+
+void draw_thermo_legend_to_ui(TFT_eSPI &tft, const RGB8Color &min_temp_color,
+                              const RGB8Color &max_temp_color, uint32_t color_blend_steps)
+{
+    static_assert(TFT_WIDTH % COLOR_BLEND_STEPS == 0);
+    auto color_legend = RGB8Color::discrete_blend(min_temp_color, max_temp_color, color_blend_steps);
     auto size_step = tft.width() / color_legend.size();
     for (size_t i = 0; i < color_legend.size(); i++) {
         const auto [r, g, b] = color_legend[i].rgb_array();
         auto color = convert_rgb888_to_rgb565(r, g, b);
         tft.fillRect(i * size_step, 238, size_step, 2, color);
     }
+}
 
+void init_mlx()
+{
     Serial.println("Search for MLX90640");
-    mlx_i2c.begin(I2C_SDA, I2C_SCL, 1'000'000);
+    mlx_i2c.begin(I2C_SDA_PIN, I2C_SCL_PIN, I2C_FREQUENCY_IN_HZ);
     if (!mlx.begin(MLX90640_I2CADDR_DEFAULT, &mlx_i2c)) {
         Serial.println("MLX90640 not found!");
         while (1)
             delay(10);
     }
-
-    Serial.println("Found MLX90640 with serial number: ");
-    Serial.print(mlx.serialNumber[0], HEX);
-    Serial.print(mlx.serialNumber[1], HEX);
-    Serial.println(mlx.serialNumber[2], HEX);
-
+    Serial.println(("Found MLX90640 with serial number: " + mlx_utils::get_serial_number(mlx)).c_str());
     mlx.setMode(Mlx90640PixelReadoutMode::MLX90640_CHESS);
     mlx.setResolution(Mlx90640BitResolution::MLX90640_ADC_18BIT);
     mlx.setRefreshRate(DEFAULT_MLX_REFRESH_RATE);
 }
 
+void setup()
+{
+    wait_for_serial();
+    init_tft(tft);
+    draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
+    init_mlx();
+}
+
 void loop()
 {
+    attachInterrupt(UI_BTN_PIN, []() { button1.force_state(PinState::HIGH_LEVEL); }, RISING);
+
     if (button1.readout() == PinState::HIGH_LEVEL) {
         tds.autoscale_active = !tds.autoscale_active;
         Serial.println("switch autoscale");
     }
-
     if (mlx.getFrame(raw_frame.data()) != 0) {
         Serial.println("frame read failed");
         return;
