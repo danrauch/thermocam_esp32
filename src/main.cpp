@@ -3,14 +3,14 @@
 #include <string>
 
 #include <Adafruit_MLX90640.h>
+#include <Arduino.h>
 #include <TFT_eSPI.h>
 
 #include "config.h"
 
-#include "Arduino.h"
 #include "algorithms.h"
+#include "arduino_pin.h"
 #include "color.h"
-#include "debounced_pin.h"
 #include "debug_utils.h"
 #include "draw_utils.h"
 #include "fixed_matrix.h"
@@ -41,7 +41,7 @@ ThermoImageStats tis{.average_temp = 0.0,
 Adafruit_MLX90640 mlx;
 TFT_eSPI tft;
 TwoWire mlx_i2c(0);
-DebouncedPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN, 50, ReadoutMode::INTERRUPT);
+ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
 
 void init_tft(TFT_eSPI &tft)
 {
@@ -97,11 +97,8 @@ void setup()
 
 void loop()
 {
-    attachInterrupt(UI_BTN_PIN, []() { button1.force_state(PinState::HIGH_LEVEL); }, RISING);
-
-    if (button1.readout() == PinState::HIGH_LEVEL) {
+    if (button1.was_edge_detected(EdgeType::RISING_EDGE)) { // TODO: this could also return the current detected behaviour
         tds.autoscale_active = !tds.autoscale_active;
-        Serial.println("switch autoscale");
     }
     if (mlx.getFrame(raw_frame.data()) != 0) {
         Serial.println("frame read failed");

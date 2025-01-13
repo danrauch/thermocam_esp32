@@ -1,79 +1,139 @@
 #pragma once
 
-#include <Arduino.h>
+#include <cassert>
+#include <functional>
+#include <stdint.h>
 
 namespace thermocam {
 
+// enums mirror Arduino's values -> test with Arduino.h to ensure compatibility
+
 enum class PinState
 {
-    LOW_LEVEL = LOW,
-    HIGH_LEVEL = HIGH
+    LOW_LEVEL = 0,
+    HIGH_LEVEL = 1
+};
+
+enum class EdgeType
+{
+    RISING_EDGE = 0x1,
+    FALLING_EDGE = 0x2,
+    ANY_EDGE = 0x3,
 };
 
 enum class PinMode
 {
-    IN_FLOATING = INPUT,
-    IN_PULLUP = INPUT_PULLUP,
-    IN_PULLDOWN = INPUT_PULLDOWN,
-    OUT = OUTPUT,
-    OUT_OPEN_DRAIN = OUTPUT_OPEN_DRAIN
+    IN_FLOATING = 0x01,
+    IN_PULLUP = 0x05,
+    IN_PULLDOWN = 0x09,
+    OUT = 0x03,
+    OUT_OPEN_DRAIN = 0x13
 };
 
-enum class ReadoutMode
-{
-    POLL,
-    INTERRUPT
-};
-
+template <typename PinType, PinType Min, PinType Max>
 class DebouncedPin
 {
 public:
-    DebouncedPin(uint8_t pin, PinMode pin_mode, long debounce_delay_ms = 50,
-                 ReadoutMode readout_mode = ReadoutMode::POLL)
-        : _pin(pin), _debounce_delay_ms(debounce_delay_ms), _readout_mode(readout_mode)
-    {
-        assert(pin >= 0 && pin <= 50);
+    using ReadoutFunction = std::function<PinState(PinType)>;
+    using PinModeFunction = std::function<void(PinType, PinMode)>;
+    using TimestampFunction = std::function<unsigned long()>;
 
-        pinMode(_pin, static_cast<uint8_t>(pin_mode));
+    DebouncedPin() = delete;
+    DebouncedPin(PinType pin,
+                 PinMode pin_mode,
+                 ReadoutFunction readout_func,
+                 TimestampFunction timestamp_func,
+                 PinModeFunction pin_setup_func = nullptr,
+                 long debounce_delay_ms = 40)
+        : _pin(pin),
+          _debounce_delay_ms(debounce_delay_ms),
+          _readout_func(readout_func),
+          _pin_setup_func(pin_setup_func),
+          _timestamp_func(timestamp_func)
+    {
+        assert(_pin >= Min && _pin <= Max);
+        assert(_readout_func != nullptr);
+        assert(_timestamp_func != nullptr);
+
+        if (_pin_setup_func != nullptr) {
+            _pin_setup_func(_pin, pin_mode);
+        }
     }
 
-    PinState readout()
+    // get state of pin by reading it out
+    PinState current_state()
     {
-        PinState current_state;
-        if (_readout_mode == ReadoutMode::POLL) {
-            auto current_time = millis();
-            if (current_time - _last_read_time > _debounce_delay_ms) {
-                _last_read_time = current_time;
-                _last_read_state = static_cast<PinState>(digitalRead(_pin));
-                current_state = _last_read_state;
-            }
-        } else {
-            current_state = _last_read_state;
-            _last_read_state = PinState::LOW_LEVEL;
-        }
+        auto current_state = _readout();
+        _last_read_state = current_state;
         return current_state;
     }
 
-    void toggle()
+    bool was_edge_detected(EdgeType edge_type)
+    {
+        auto current_state = _readout();
+        bool is_edge = false;
+        switch (edge_type) {
+        case EdgeType::RISING_EDGE:
+            is_edge = current_state == PinState::HIGH_LEVEL && _last_read_state == PinState::LOW_LEVEL;
+            break;
+        case EdgeType::FALLING_EDGE:
+            is_edge = current_state == PinState::LOW_LEVEL && _last_read_state == PinState::HIGH_LEVEL;
+            break;
+        case EdgeType::ANY_EDGE:
+            is_edge = current_state != _last_read_state;
+            break;
+        default:
+            break;
+        }
+        _last_read_state = current_state;
+        return is_edge;
+    }
+
+    // Get last read pin state. Does not readout pin state!
+    PinState last_state() const
+    {
+        return _last_read_state;
+    }
+
+    void set_last_state(PinState state)
+    {
+        _last_read_state = state;
+    }
+
+    void toggle_last_state()
     {
         _last_read_state = _last_read_state == PinState::LOW_LEVEL ? PinState::HIGH_LEVEL : PinState::LOW_LEVEL;
     }
 
-    void force_state(PinState state)
+    void change_pin_mode(PinMode pin_mode)
     {
-        auto current_time = millis();
-        if (current_time - _last_read_time > _debounce_delay_ms) {
-            _last_read_time = current_time;
-            _last_read_state = state;
-        }
+        assert(_pin_setup_func != nullptr);
+
+        _pin_setup_func(_pin, pin_mode);
     }
 
 private:
-    uint8_t _pin;
-    unsigned long _debounce_delay_ms = 50;
-    unsigned long _last_read_time = 0;
+    PinState _readout()
+    {
+        assert(_readout_func != nullptr);
+        assert(_timestamp_func != nullptr);
+
+        auto current_time = _timestamp_func();
+        if (current_time - _last_update_time > _debounce_delay_ms) {
+            _last_update_time = current_time;
+            _read_state_buffer = _readout_func(_pin);
+        }
+        return _read_state_buffer;
+    }
+
+    PinType _pin;
+    unsigned long _debounce_delay_ms = 40;
+    unsigned long _last_update_time = 0;
+    PinState _read_state_buffer = PinState::LOW_LEVEL;
     PinState _last_read_state = PinState::LOW_LEVEL;
-    ReadoutMode _readout_mode = ReadoutMode::POLL;
+    ReadoutFunction _readout_func = nullptr;
+    PinModeFunction _pin_setup_func = nullptr;
+    TimestampFunction _timestamp_func = nullptr;
 };
 
 } // namespace thermocam
