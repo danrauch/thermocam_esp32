@@ -3,27 +3,7 @@
 
 namespace thermocam::color {
 
-// private
-
-RGB8Color::RGB8Color(int r, int g, int b) : _r(std::max(std::min(r, 255), 0)),
-                                            _g(std::max(std::min(g, 255), 0)),
-                                            _b(std::max(std::min(b, 255), 0))
-{
-}
-
 // public
-
-RGB8Color RGB8Color::create_from_enum(CommonColor color)
-{
-    const auto [r, g, b] = decode_int_to_rgb(static_cast<uint32_t>(color));
-    return RGB8Color::create_from_rgb(r, g, b);
-}
-
-RGB8Color RGB8Color::create_from_rgb(uint8_t r, uint8_t g, uint8_t b)
-{
-    assert(r < 256 && g < 256 && b < 256);
-    return RGB8Color(r, g, b);
-}
 
 RGB8Color RGB8Color::operator+(const RGB8Color &rhs) const
 {

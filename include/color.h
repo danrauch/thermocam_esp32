@@ -1,17 +1,22 @@
 #pragma once
 
-#include <cassert>
 #include <array>
+#include <cassert>
 #include <ostream>
 #include <stdint.h>
 #include <tuple>
 #include <vector>
 
+// test some "fun" stuff :-)
+#define FUN [[nodiscard]] constexpr auto
+#define STATIC_FUN [[nodiscard]] constexpr static auto
+
 namespace thermocam::color {
 
 using RGBArray = std::array<uint8_t, 3>;
 
-constexpr uint16_t convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) {
+FUN convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) -> uint16_t
+{
     uint16_t r5 = (r >> 3) & 0x1F; // 5 bit for red
     uint16_t g6 = (g >> 2) & 0x3F; // 6 bit for green
     uint16_t b5 = (b >> 3) & 0x1F; // 5 bit for blue
@@ -19,12 +24,12 @@ constexpr uint16_t convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) {
     return (r5 << 11) | (g6 << 5) | b5;
 }
 
-constexpr uint32_t encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b)
+FUN encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b) -> uint32_t
 {
     return r << 16 | g << 8 | b;
 }
 
-constexpr RGBArray decode_int_to_rgb(uint32_t color)
+FUN decode_int_to_rgb(uint32_t color) -> RGBArray
 {
     return {(uint8_t)((color & 0x00FF0000) >> 16), (uint8_t)((color & 0x0000FF00) >> 8), (uint8_t)(color & 0x000000FF)};
 }
@@ -44,8 +49,17 @@ enum class CommonColor : uint32_t
 class RGB8Color final
 {
 public:
-    static RGB8Color create_from_enum(CommonColor color);
-    static RGB8Color create_from_rgb(uint8_t r, uint8_t g, uint8_t b);
+    STATIC_FUN create_from_enum(CommonColor color) -> RGB8Color
+    {
+        const auto [r, g, b] = decode_int_to_rgb(static_cast<uint32_t>(color));
+        return RGB8Color::create_from_rgb(r, g, b);
+    }
+
+    STATIC_FUN create_from_rgb(uint8_t r, uint8_t g, uint8_t b) -> RGB8Color
+    {
+        assert(r < 256 && g < 256 && b < 256);
+        return RGB8Color(r, g, b);
+    }
 
     static RGB8Color lerp(const RGB8Color &from_color, const RGB8Color &to_color, float fraction);
     static std::vector<RGB8Color> discrete_blend(const RGB8Color &from_color, const RGB8Color &to_color, uint32_t steps);
@@ -64,10 +78,10 @@ public:
         return out << static_cast<std::string>(obj);
     }
 
-    uint8_t r() const { return _r; }
-    uint8_t g() const { return _g; }
-    uint8_t b() const { return _b; }
-    RGBArray rgb_array() const { return {_r, _g, _b}; }
+    constexpr uint8_t r() const { return _r; }
+    constexpr uint8_t g() const { return _g; }
+    constexpr uint8_t b() const { return _b; }
+    constexpr RGBArray rgb_array() const { return {_r, _g, _b}; }
 
     RGB8Color lerp(const RGB8Color &other, float fraction) { return RGB8Color::lerp(*this, other, fraction); }
 
@@ -76,22 +90,27 @@ public:
         return RGB8Color(color.r() * factor, color.g() * factor, color.b() * factor);
     }
 
-    RGB8Color() = default;  // Need default constructor so it can be in std::array
+    // Need default constructor so it can be in std::array
+    constexpr RGB8Color() = default;
+
 private:
-    RGB8Color(int r, int g, int b);
-    uint8_t _r, _g, _b;
+    constexpr RGB8Color(int r, int g, int b) : _r(std::max(std::min(r, 255), 0)),
+                                               _g(std::max(std::min(g, 255), 0)),
+                                               _b(std::max(std::min(b, 255), 0))
+    {
+    }
+    uint8_t _r = 0, _g = 0, _b = 0;
 };
 
-
 namespace common_colors {
-    inline const auto BLACK = RGB8Color::create_from_enum(CommonColor::BLACK);
-    inline const auto WHITE = RGB8Color::create_from_enum(CommonColor::WHITE);
-    inline const auto RED = RGB8Color::create_from_enum(CommonColor::RED);
-    inline const auto GREEN = RGB8Color::create_from_enum(CommonColor::GREEN);
-    inline const auto BLUE = RGB8Color::create_from_enum(CommonColor::BLUE);
-    inline const auto YELLOW = RGB8Color::create_from_enum(CommonColor::YELLOW);
-    inline const auto CYAN = RGB8Color::create_from_enum(CommonColor::CYAN);
-    inline const auto MAGENTA = RGB8Color::create_from_enum(CommonColor::MAGENTA);
-}
+constexpr auto BLACK = RGB8Color::create_from_enum(CommonColor::BLACK);
+constexpr auto WHITE = RGB8Color::create_from_enum(CommonColor::WHITE);
+constexpr auto RED = RGB8Color::create_from_enum(CommonColor::RED);
+constexpr auto GREEN = RGB8Color::create_from_enum(CommonColor::GREEN);
+constexpr auto BLUE = RGB8Color::create_from_enum(CommonColor::BLUE);
+constexpr auto YELLOW = RGB8Color::create_from_enum(CommonColor::YELLOW);
+constexpr auto CYAN = RGB8Color::create_from_enum(CommonColor::CYAN);
+constexpr auto MAGENTA = RGB8Color::create_from_enum(CommonColor::MAGENTA);
+} // namespace common_colors
 
 } // namespace thermocam::color
