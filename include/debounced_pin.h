@@ -30,20 +30,23 @@ enum class PinMode
     OUT_OPEN_DRAIN = 0x13
 };
 
-template <typename PinType, PinType Min, PinType Max>
+static void noop_pin_mode_func(uint8_t, PinMode) {}
+
+template <typename PinType, PinType Min, PinType Max,
+          typename ReadoutFunction, typename TimestampFunction, typename PinModeFunction = decltype(noop_pin_mode_func)>
 class DebouncedPin
 {
 public:
-    using ReadoutFunction = std::function<PinState(PinType)>;
-    using PinModeFunction = std::function<void(PinType, PinMode)>;
-    using TimestampFunction = std::function<unsigned long()>;
+    // using ReadoutFunction = std::function<PinState(PinType)>;
+    // using PinModeFunction = std::function<void(PinType, PinMode)>;
+    // using TimestampFunction = std::function<unsigned long()>;
 
     DebouncedPin() = delete;
     DebouncedPin(PinType pin,
                  PinMode pin_mode,
                  ReadoutFunction readout_func,
                  TimestampFunction timestamp_func,
-                 PinModeFunction pin_setup_func = nullptr,
+                 PinModeFunction pin_setup_func = noop_pin_mode_func,
                  long debounce_delay_ms = 40)
         : _pin(pin),
           _debounce_delay_ms(debounce_delay_ms),
@@ -52,12 +55,7 @@ public:
           _timestamp_func(timestamp_func)
     {
         assert(_pin >= Min && _pin <= Max);
-        assert(_readout_func != nullptr);
-        assert(_timestamp_func != nullptr);
-
-        if (_pin_setup_func != nullptr) {
-            _pin_setup_func(_pin, pin_mode);
-        }
+        _pin_setup_func(_pin, pin_mode);
     }
 
     // get state of pin by reading it out
@@ -107,17 +105,12 @@ public:
 
     void change_pin_mode(PinMode pin_mode)
     {
-        assert(_pin_setup_func != nullptr);
-
         _pin_setup_func(_pin, pin_mode);
     }
 
 private:
     PinState _readout()
     {
-        assert(_readout_func != nullptr);
-        assert(_timestamp_func != nullptr);
-
         auto current_time = _timestamp_func();
         if (current_time - _last_update_time > _debounce_delay_ms) {
             _last_update_time = current_time;
@@ -131,9 +124,9 @@ private:
     unsigned long _last_update_time = 0;
     PinState _read_state_buffer = PinState::LOW_LEVEL;
     PinState _last_read_state = PinState::LOW_LEVEL;
-    ReadoutFunction _readout_func = nullptr;
-    PinModeFunction _pin_setup_func = nullptr;
-    TimestampFunction _timestamp_func = nullptr;
+    PinState(*_readout_func)(PinType);
+    void(*_pin_setup_func)(PinType, PinMode);
+    unsigned long(*_timestamp_func)();
 };
 
 } // namespace thermocam
