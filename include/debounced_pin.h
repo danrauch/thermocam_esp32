@@ -90,17 +90,17 @@ public:
     }
 
     // Get last read pin state. Does not readout pin state!
-    PinState last_state() const
+    PinState last_state() const noexcept
     {
         return _last_read_state;
     }
 
-    void set_last_state(PinState state)
+    void set_last_state(PinState state) noexcept
     {
         _last_read_state = state;
     }
 
-    void toggle_last_state()
+    void toggle_last_state() noexcept
     {
         _last_read_state = _last_read_state == PinState::LOW_LEVEL ? PinState::HIGH_LEVEL : PinState::LOW_LEVEL;
     }

@@ -15,7 +15,7 @@ namespace thermocam::color {
 
 using RGBArray = std::array<uint8_t, 3>;
 
-FUN convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) -> uint16_t
+FUN convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) noexcept -> uint16_t
 {
     uint16_t r5 = (r >> 3) & 0x1F; // 5 bit for red
     uint16_t g6 = (g >> 2) & 0x3F; // 6 bit for green
@@ -24,12 +24,12 @@ FUN convert_rgb888_to_rgb565(uint8_t r, uint8_t g, uint8_t b) -> uint16_t
     return (r5 << 11) | (g6 << 5) | b5;
 }
 
-FUN encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b) -> uint32_t
+FUN encode_rgb_to_int(uint8_t r, uint8_t g, uint8_t b) noexcept -> uint32_t
 {
     return r << 16 | g << 8 | b;
 }
 
-FUN decode_int_to_rgb(uint32_t color) -> RGBArray
+FUN decode_int_to_rgb(uint32_t color) noexcept -> RGBArray
 {
     return {(uint8_t)((color & 0x00FF0000) >> 16), (uint8_t)((color & 0x0000FF00) >> 8), (uint8_t)(color & 0x000000FF)};
 }
@@ -49,13 +49,13 @@ enum class CommonColor : uint32_t
 class RGB8Color final
 {
 public:
-    STATIC_FUN create_from_enum(CommonColor color) -> RGB8Color
+    STATIC_FUN create_from_enum(CommonColor color) noexcept -> RGB8Color
     {
         const auto [r, g, b] = decode_int_to_rgb(static_cast<uint32_t>(color));
         return RGB8Color::create_from_rgb(r, g, b);
     }
 
-    STATIC_FUN create_from_rgb(uint8_t r, uint8_t g, uint8_t b) -> RGB8Color
+    STATIC_FUN create_from_rgb(uint8_t r, uint8_t g, uint8_t b) noexcept -> RGB8Color
     {
         assert(r < 256 && g < 256 && b < 256);
         return RGB8Color(r, g, b);
@@ -78,10 +78,10 @@ public:
         return out << static_cast<std::string>(obj);
     }
 
-    constexpr uint8_t r() const { return _r; }
-    constexpr uint8_t g() const { return _g; }
-    constexpr uint8_t b() const { return _b; }
-    constexpr RGBArray rgb_array() const { return {_r, _g, _b}; }
+    FUN r() const noexcept -> uint8_t { return _r; }
+    FUN g() const noexcept -> uint8_t { return _g; }
+    FUN b() const noexcept -> uint8_t { return _b; }
+    FUN rgb_array() const noexcept -> RGBArray { return {_r, _g, _b}; }
 
     RGB8Color lerp(const RGB8Color &other, float fraction) { return RGB8Color::lerp(*this, other, fraction); }
 
@@ -94,9 +94,9 @@ public:
     constexpr RGB8Color() = default;
 
 private:
-    constexpr RGB8Color(int r, int g, int b) : _r(std::max(std::min(r, 255), 0)),
-                                               _g(std::max(std::min(g, 255), 0)),
-                                               _b(std::max(std::min(b, 255), 0))
+    constexpr RGB8Color(int r, int g, int b) noexcept : _r(std::max(std::min(r, 255), 0)),
+                                                        _g(std::max(std::min(g, 255), 0)),
+                                                        _b(std::max(std::min(b, 255), 0))
     {
     }
     uint8_t _r = 0, _g = 0, _b = 0;
@@ -114,3 +114,6 @@ constexpr auto MAGENTA = RGB8Color::create_from_enum(CommonColor::MAGENTA);
 } // namespace common_colors
 
 } // namespace thermocam::color
+
+#undef FUN
+#undef STATIC_FUN
