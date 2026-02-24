@@ -47,16 +47,18 @@ RGB8Color RGB8Color::lerp(const RGB8Color &from_color, const RGB8Color &to_color
 }
 
 std::vector<RGB8Color> RGB8Color::discrete_blend(const RGB8Color &from_color, const RGB8Color &to_color, uint32_t steps)
-{       
+{
+    if (steps <= 1) {
+        return steps == 1 ? std::vector<RGB8Color>{from_color} : std::vector<RGB8Color>{};
+    }
     std::vector<RGB8Color> color_vector;
     color_vector.reserve(steps);
-    float step = 1.0 / (steps - 1);
-    float fraction = 0.0;
-    for (int current_step = 0; current_step < steps; current_step++) {
+    float step = 1.0f / static_cast<float>(steps - 1);
+    float fraction = 0.0f;
+    for (uint32_t current_step = 0; current_step < steps; current_step++) {
         color_vector.emplace_back(algorithms::lerp(from_color, to_color, fraction));
         fraction += step;
     }
-
     return color_vector;
 }
 

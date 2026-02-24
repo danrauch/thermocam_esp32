@@ -1,6 +1,8 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
+#include <mutex>
 
 #include "types/common_types.h"
 #include "types/container_types.h"
@@ -37,6 +39,7 @@ private:
     void start_http_server();
 
 private:
+    mutable std::mutex frame_mutex_;
     UpscaledRGBThermoImage latest_frame_{};
     ThermoImageStats latest_stats_{};
     bool has_frame_ = false;
@@ -52,7 +55,7 @@ private:
     uint8_t jpeg_buffer_[JPEG_OUTPUT_BUFFER_SIZE]{};
 
     httpd_handle_t httpd_ = nullptr;
-    volatile int stream_client_count_ = 0;
+    std::atomic<int> stream_client_count_{0};
 
     httpd_uri_t *stats_uri_ = nullptr;
     httpd_uri_t *snapshot_uri_ = nullptr;

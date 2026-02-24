@@ -27,7 +27,7 @@ constexpr uint16_t UPSCALED_IMAGE_HEIGHT = MLX_SENSOR_HEIGHT * BILINEAR_INTERPOL
 
 constexpr uint8_t COLOR_BLEND_STEPS = 40;
 constexpr auto MIN_TEMP_COLOR = color::common_colors::BLUE;
-const auto MAX_TEMP_COLOR = color::common_colors::RED;
+constexpr auto MAX_TEMP_COLOR = color::common_colors::RED;
 
 constexpr float DEFAULT_MANUAL_MIN_TEMP = 5.0;
 constexpr float DEFAULT_MANUAL_MAX_TEMP = 40.0;

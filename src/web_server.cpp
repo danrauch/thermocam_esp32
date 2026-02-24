@@ -106,7 +106,11 @@ bool WebServer::encode_latest_frame_to_jpeg(std::size_t &jpeg_size)
 
 int WebServer::handle_stats(httpd_req *req)
 {
-    ThermoImageStats local_stats = latest_stats_;
+    ThermoImageStats local_stats;
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        local_stats = latest_stats_;
+    }
 
     char buffer[160];
     int len = std::snprintf(buffer, sizeof(buffer),
@@ -127,47 +131,56 @@ int WebServer::handle_stats(httpd_req *req)
 
 int WebServer::handle_snapshot(httpd_req *req)
 {
-    if (!has_frame_) {
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No frame available");
-        return ESP_OK;
-    }
-
     std::size_t jpeg_size = 0;
-    if (!encode_latest_frame_to_jpeg(jpeg_size)) {
-        return ESP_FAIL;
+    {
+        std::lock_guard<std::mutex> lock(frame_mutex_);
+        if (!has_frame_) {
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No frame available");
+            return ESP_OK;
+        }
+        if (!fill_rgb_buffer_from_frame() || !encode_latest_frame_to_jpeg(jpeg_size)) {
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Encoding failed");
+            return ESP_OK;
+        }
+        httpd_resp_set_type(req, "image/jpeg");
+        httpd_resp_send(req,
+                        reinterpret_cast<const char *>(jpeg_buffer_),
+                        static_cast<ssize_t>(jpeg_size));
     }
-
-    httpd_resp_set_type(req, "image/jpeg");
-    httpd_resp_send(req,
-                    reinterpret_cast<const char *>(jpeg_buffer_),
-                    static_cast<ssize_t>(jpeg_size));
     return ESP_OK;
 }
 
 int WebServer::handle_stream(httpd_req *req)
 {
-    ++stream_client_count_;
+    stream_client_count_++;
 
     httpd_resp_set_type(req, "multipart/x-mixed-replace; boundary=frame");
 
     uint32_t last_frame_index = 0;
 
     while (true) {
-        if (!has_frame_) {
-            vTaskDelay(pdMS_TO_TICKS(50));
-            continue;
-        }
-
-        ThermoImageStats local_stats = latest_stats_;
-        if (local_stats.frame_index == last_frame_index) {
-            vTaskDelay(pdMS_TO_TICKS(30));
-            continue;
-        }
-        last_frame_index = local_stats.frame_index;
-
         std::size_t jpeg_size = 0;
-        if (!encode_latest_frame_to_jpeg(jpeg_size)) {
-            break;
+        bool encoded = false;
+        bool had_frame = false;
+        bool frame_unchanged = false;
+        {
+            std::lock_guard<std::mutex> lock(frame_mutex_);
+            had_frame = has_frame_;
+            if (has_frame_) {
+                ThermoImageStats local_stats = latest_stats_;
+                frame_unchanged = (local_stats.frame_index == last_frame_index);
+                if (!frame_unchanged) {
+                    last_frame_index = local_stats.frame_index;
+                    if (fill_rgb_buffer_from_frame() && encode_latest_frame_to_jpeg(jpeg_size)) {
+                        encoded = true;
+                    }
+                }
+            }
+        }
+
+        if (!encoded) {
+            vTaskDelay(pdMS_TO_TICKS(had_frame && frame_unchanged ? 30 : 50));
+            continue;
         }
 
         static const char *STREAM_BOUNDARY = "\r\n--frame\r\n";
@@ -188,14 +201,17 @@ int WebServer::handle_stream(httpd_req *req)
             break;
         }
 
-        if (httpd_resp_send_chunk(req,
-                                  reinterpret_cast<const char *>(jpeg_buffer_),
-                                  static_cast<ssize_t>(jpeg_size)) != ESP_OK) {
-            break;
+        {
+            std::lock_guard<std::mutex> lock(frame_mutex_);
+            if (httpd_resp_send_chunk(req,
+                                      reinterpret_cast<const char *>(jpeg_buffer_),
+                                      static_cast<ssize_t>(jpeg_size)) != ESP_OK) {
+                break;
+            }
         }
     }
 
-    --stream_client_count_;
+    stream_client_count_--;
     httpd_resp_send_chunk(req, nullptr, 0);
     return ESP_OK;
 }
@@ -268,6 +284,7 @@ void WebServer::init()
 
 void WebServer::update_frame(const UpscaledRGBThermoImage &frame, const ThermoImageStats &stats)
 {
+    std::lock_guard<std::mutex> lock(frame_mutex_);
     latest_frame_ = frame;
     latest_stats_ = stats;
     has_frame_ = true;
