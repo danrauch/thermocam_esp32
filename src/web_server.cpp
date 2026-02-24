@@ -128,7 +128,8 @@ int WebServer::handle_stats(httpd_req *req)
 int WebServer::handle_snapshot(httpd_req *req)
 {
     if (!has_frame_) {
-        return ESP_FAIL;
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No frame available");
+        return ESP_OK;
     }
 
     std::size_t jpeg_size = 0;
@@ -226,6 +227,7 @@ void WebServer::start_http_server()
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
+    config.stack_size = 8192; // Increase stack size for JPEG encoding
 
     if (httpd_start(&httpd_, &config) == ESP_OK) {
         // Allocate URI descriptors once and associate this as user_ctx.

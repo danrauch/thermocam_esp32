@@ -44,7 +44,7 @@ Adafruit_MLX90640 mlx;
 TFT_eSPI tft;
 TwoWire mlx_i2c(0);
 ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
-WebServer web_server;
+WebServer webserver;
 
 void init_tft(TFT_eSPI &tft)
 {
@@ -93,7 +93,7 @@ void init_mlx()
 void setup()
 {
     wait_for_serial();
-    web_server.init();
+    webserver.init();
     init_tft(tft);
     draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
     init_mlx();
@@ -126,13 +126,13 @@ void loop()
     mlx_utils::convert_raw_temp_to_color(raw_frame, rgb_frame, tds);
 
     algorithms::bilinear_upscale(rgb_frame, upscaled_frame);
+    webserver.update_frame(upscaled_frame, tis);
 
     draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
                                                        BILINEAR_INTERPOLATION_FACTOR,
                                                        common_colors::CYAN, common_colors::RED);
-    if (!web_server.is_streaming()) {
-        draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
-        draw_utils::draw_live_ui(tft, tds, tis);
-    }
-    web_server.update_frame(upscaled_frame, tis);
+
+    draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
+    draw_utils::draw_live_ui(tft, tds, tis);
+
 }

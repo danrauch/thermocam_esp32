@@ -5,14 +5,9 @@
 #include "types/common_types.h"
 #include "types/container_types.h"
 
-// Forward-declare ESP-IDF HTTP types without forcing the header on all users.
 extern "C" {
-struct httpd_req;
-struct httpd_data;
-struct httpd_uri;
+#include "esp_http_server.h"
 }
-typedef httpd_data *httpd_handle_t;
-typedef httpd_uri httpd_uri_t;
 
 namespace thermocam::web_server {
 
