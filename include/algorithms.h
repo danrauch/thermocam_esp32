@@ -21,7 +21,11 @@ template <typename T>
 template <typename T>
 [[nodiscard]] constexpr T normalize(T min, T max, T value_to_normalize) noexcept
 {
-    return (value_to_normalize - min) / (max - min);
+    const auto range = max - min;
+    if (range == 0) {
+        return static_cast<T>(0);
+    }
+    return (value_to_normalize - min) / range;
 }
 
 template <typename T, size_t IN_ROWS, size_t IN_COLS, size_t OUT_ROWS, size_t OUT_COLS>
@@ -48,11 +52,13 @@ constexpr void bilinear_upscale(
             T v10 = in(row_in + 1, col_in);
             T v11 = in(row_in + 1, col_in + 1);
 
-            double frac_row = row_out / SCALE_FACTOR - row_in;
-            double frac_col = col_out / SCALE_FACTOR - col_in;
+            float frac_row = row_out / SCALE_FACTOR - row_in;
+            float frac_col = col_out / SCALE_FACTOR - col_in;
 
-            out(row_out, col_out) = (1 - frac_row) * (1 - frac_col) * v00 + (1 - frac_row) * frac_col * v01 +
-                                    frac_row * (1 - frac_col) * v10 + frac_row * frac_col * v11;
+            out(row_out, col_out) = (1.0f - frac_row) * (1.0f - frac_col) * v00 + 
+                                    (1.0f - frac_row) * frac_col * v01 +
+                                    frac_row * (1.0f - frac_col) * v10 + 
+                                    frac_row * frac_col * v11;
         }
     }
 }

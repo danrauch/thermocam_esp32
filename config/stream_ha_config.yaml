@@ -1,0 +1,6 @@
+camera:
+  - platform: generic
+    name: Thermocam
+    still_image_url: http://THERMOCAM_IP/stream
+    stream_source: http://THERMOCAM_IP/stream
+    content_type: mjpeg

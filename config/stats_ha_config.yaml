@@ -1,0 +1,24 @@
+sensor:
+  - platform: rest
+    name: Thermocam Min Temperature
+    resource: http://THERMOCAM_IP/stats
+    method: GET
+    scan_interval: 5
+    value_template: "{{ value_json.min | float }}"
+    unit_of_measurement: "°C"
+
+  - platform: rest
+    name: Thermocam Max Temperature
+    resource: http://THERMOCAM_IP/stats
+    method: GET
+    scan_interval: 5
+    value_template: "{{ value_json.max | float }}"
+    unit_of_measurement: "°C"
+
+  - platform: rest
+    name: Thermocam Avg Temperature
+    resource: http://THERMOCAM_IP/stats
+    method: GET
+    scan_interval: 5
+    value_template: "{{ value_json.avg | float }}"
+    unit_of_measurement: "°C"

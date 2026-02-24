@@ -15,11 +15,13 @@
 #include "draw_utils.h"
 #include "fixed_matrix.h"
 #include "mlx_utils.h"
+#include "web_server.h"
 #include "types/common_types.h"
 #include "types/container_types.h"
 
 using namespace thermocam;
 using namespace thermocam::color;
+using thermocam::web_server::WebServer;
 
 // buffer for full frame of temperatures
 ThermoImage raw_frame;
@@ -42,6 +44,7 @@ Adafruit_MLX90640 mlx;
 TFT_eSPI tft;
 TwoWire mlx_i2c(0);
 ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
+WebServer web_server;
 
 void init_tft(TFT_eSPI &tft)
 {
@@ -90,6 +93,7 @@ void init_mlx()
 void setup()
 {
     wait_for_serial();
+    web_server.init();
     init_tft(tft);
     draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
     init_mlx();
@@ -126,6 +130,9 @@ void loop()
     draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
                                                        BILINEAR_INTERPOLATION_FACTOR,
                                                        common_colors::CYAN, common_colors::RED);
-    draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
-    draw_utils::draw_live_ui(tft, tds, tis);
+    if (!web_server.is_streaming()) {
+        draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
+        draw_utils::draw_live_ui(tft, tds, tis);
+    }
+    web_server.update_frame(upscaled_frame, tis);
 }
