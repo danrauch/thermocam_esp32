@@ -102,10 +102,12 @@ inline void draw_thermo_image(TFT_eSPI &tft, const UpscaledRGBThermoImage &upsca
         for (int line = 0; line < strip_height; line++) {
             for (int col = 0; col < num_cols; col++) {
                 const auto [r, g, b] = upscaled_frame(row, col).rgb_array();
+                tft.color565(r, g, b);
                 const uint16_t color = color::convert_rgb888_to_rgb565(r, g, b);
+                const uint16_t color_swapped = (color >> 8) | (color << 8);
                 const int base = line * strip_width + col * draw_interpolation_factor;
                 for (int k = 0; k < draw_interpolation_factor; k++) {
-                    strip[base + k] = color;
+                    strip[base + k] = color_swapped;
                 }
             }
             if (flag_invert_x == -1) {
