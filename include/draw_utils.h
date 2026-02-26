@@ -98,8 +98,6 @@ inline void draw_thermo_image(TFT_eSPI &tft, const UpscaledRGBThermoImage &upsca
     const int num_cols = static_cast<int>(upscaled_frame.cols());
     const int num_rows = static_cast<int>(upscaled_frame.rows());
 
-    tft.setSwapBytes(true);
-
     for (int row = 0; row < num_rows; row++) {
         for (int line = 0; line < strip_height; line++) {
             for (int col = 0; col < num_cols; col++) {

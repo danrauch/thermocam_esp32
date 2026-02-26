@@ -55,6 +55,7 @@ void init_tft(TFT_eSPI &tft)
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
     tft.setTextSize(1);
+    tft.setSwapBytes(true);
 }
 
 void wait_for_serial()
