@@ -61,9 +61,9 @@ bool WebServer::fill_rgb_buffer_from_frame()
             if (index + 3 > JPEG_RGB_BUFFER_SIZE) {
                 return false;
             }
-            rgb_buffer_[index++] = rgb[0];
-            rgb_buffer_[index++] = rgb[1];
             rgb_buffer_[index++] = rgb[2];
+            rgb_buffer_[index++] = rgb[1];
+            rgb_buffer_[index++] = rgb[0];
         }
     }
     return true;
