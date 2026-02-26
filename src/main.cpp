@@ -5,6 +5,7 @@
 #include <Adafruit_MLX90640.h>
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include <WiFi.h>
 
 #include "config.h"
 
@@ -45,6 +46,8 @@ TFT_eSPI tft;
 TwoWire mlx_i2c(0);
 ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
 WebServer webserver;
+std::string ssid, ip_addr;
+bool last_streaming_state = false;
 
 void init_tft(TFT_eSPI &tft)
 {
@@ -90,10 +93,22 @@ void init_mlx()
     mlx.setRefreshRate(DEFAULT_MLX_REFRESH_RATE);
 }
 
+void get_wifi_info(std::string &ssid_out, std::string &ip_addr_out)
+{
+    ssid_out = WiFi.SSID().c_str();
+    
+    IPAddress ip = WiFi.localIP();
+    char ip_buffer[20];
+    std::snprintf(ip_buffer, sizeof(ip_buffer), "%d.%d.%d.%d",
+                  ip[0], ip[1], ip[2], ip[3]);
+    ip_addr_out = ip_buffer;
+}
+
 void setup()
 {
     wait_for_serial();
     webserver.init();
+    get_wifi_info(ssid, ip_addr);
     init_tft(tft);
     draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
     init_mlx();
@@ -128,11 +143,20 @@ void loop()
     algorithms::bilinear_upscale(rgb_frame, upscaled_frame);
     webserver.update_frame(upscaled_frame, tis);
 
-    draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
-                                                       BILINEAR_INTERPOLATION_FACTOR,
-                                                       common_colors::CYAN, common_colors::RED);
+    // Check if streaming is active
+    if (webserver.is_streaming()) {
+        // Display streaming UI instead of live thermo data
+        bool force_black_bg = !last_streaming_state; // Only force black background on the first frame of streaming
+        draw_utils::draw_streaming_ui(tft, ssid.c_str(), ip_addr.c_str(), tis, force_black_bg);
+    } else {
+        draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
+                                                           BILINEAR_INTERPOLATION_FACTOR,
+                                                           common_colors::CYAN, common_colors::RED);
 
-    draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
-    draw_utils::draw_live_ui(tft, tds, tis);
+        draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
+        draw_utils::draw_live_ui(tft, tds, tis);
+    }
+
+    last_streaming_state = webserver.is_streaming();
 
 }

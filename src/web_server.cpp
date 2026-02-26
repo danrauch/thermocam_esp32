@@ -216,7 +216,7 @@ int WebServer::handle_stream(httpd_req *req)
     return ESP_OK;
 }
 
-void WebServer::connect_wifi()
+IPAddress WebServer::connect_wifi()
 {
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi_config::WIFI_SSID, wifi_config::WIFI_PASSWORD);
@@ -233,6 +233,8 @@ void WebServer::connect_wifi()
         Serial.print("WiFi connected, IP address: ");
         Serial.println(WiFi.localIP());
     }
+
+    return WiFi.localIP();
 }
 
 void WebServer::start_http_server()

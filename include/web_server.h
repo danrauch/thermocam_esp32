@@ -35,7 +35,7 @@ public:
 private:
     bool fill_rgb_buffer_from_frame();
     bool encode_latest_frame_to_jpeg(std::size_t &jpeg_size);
-    void connect_wifi();
+    IPAddress connect_wifi();
     void start_http_server();
 
 private:

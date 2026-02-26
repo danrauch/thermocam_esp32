@@ -172,4 +172,48 @@ inline void insert_min_max_temp_crosses_into_image(UpscaledRGBThermoImage &image
                           max_cross_color, image);
 }
 
+inline void draw_streaming_ui(TFT_eSPI &tft, const char *ssid, const char *ip_addr, 
+                              const ThermoImageStats &tis, bool force_black_bg = false)
+{
+    if (force_black_bg) {
+        tft.fillScreen(TFT_BLACK);
+    }
+    
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    
+    // Display WiFi SSID
+    tft.drawString("SSID:", 5, 10, 2);
+    tft.drawString(ssid, 45, 10, 2);
+    
+    // Display IP address
+    tft.drawString("IP:", 5, 30, 2);
+    tft.drawString(ip_addr, 45, 30, 2);
+    
+    // Display "STREAMING" in large text
+    tft.setTextSize(3);
+    tft.drawCentreString("STREAMING", 120, 80, 2);
+    tft.setTextSize(1);
+    
+    // Display temperature values
+    char avg_temp_buf[16];
+    char min_temp_buf[16];
+    char max_temp_buf[16];
+    
+    std::snprintf(avg_temp_buf, sizeof(avg_temp_buf), "%.1f C", static_cast<double>(tis.average_temp));
+    std::snprintf(min_temp_buf, sizeof(min_temp_buf), "%.1f C", static_cast<double>(tis.min_temp));
+    std::snprintf(max_temp_buf, sizeof(max_temp_buf), "%.1f C", static_cast<double>(tis.max_temp));
+    
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.drawString("Avg:", 10, 175, 2);
+    tft.drawString(avg_temp_buf, 70, 175, 2);
+    
+    tft.setTextColor(MIN_TFT_TEMP_COLOR, TFT_BLACK);
+    tft.drawString("Min:", 10, 195, 2);
+    tft.drawString(min_temp_buf, 70, 195, 2);
+    
+    tft.setTextColor(MAX_TFT_TEMP_COLOR, TFT_BLACK);
+    tft.drawString("Max:", 10, 215, 2);
+    tft.drawString(max_temp_buf, 70, 215, 2);
+}
+
 } // namespace thermocam::draw_utils
