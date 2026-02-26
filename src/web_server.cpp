@@ -87,7 +87,7 @@ bool WebServer::encode_latest_frame_to_jpeg(std::size_t &jpeg_size)
                          JPEG_MAX_HEIGHT,
                          JPEGE_PIXEL_RGB888,
                          JPEGE_SUBSAMPLE_420,
-                         JPEGE_Q_MED) != JPEGE_SUCCESS) {
+                         JPEGE_Q_HIGH) != JPEGE_SUCCESS) {
         return false;
     }
 
