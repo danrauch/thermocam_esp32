@@ -8,7 +8,7 @@
 
 namespace thermocam::debug_utils {
 
-std::string generate_debug_string(ThermoDisplaySettings &tds, ThermoImageStats &stats)
+inline std::string generate_debug_string(const ThermoDisplaySettings &tds, const ThermoImageStats &stats)
 {
     std::string msg("#:  Avg  |  Min  |  Max  [°C]:\n");
     msg += std::to_string(stats.frame_index) + ": " + std::to_string(stats.average_temp);

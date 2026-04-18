@@ -5,6 +5,7 @@
 #include <Adafruit_MLX90640.h>
 #include <Arduino.h>
 #include <TFT_eSPI.h>
+#include <WiFi.h>
 
 #include "config.h"
 
@@ -15,11 +16,13 @@
 #include "draw_utils.h"
 #include "fixed_matrix.h"
 #include "mlx_utils.h"
+#include "web_server.h"
 #include "types/common_types.h"
 #include "types/container_types.h"
 
 using namespace thermocam;
 using namespace thermocam::color;
+using thermocam::web_server::WebServer;
 
 // buffer for full frame of temperatures
 ThermoImage raw_frame;
@@ -42,13 +45,19 @@ Adafruit_MLX90640 mlx;
 TFT_eSPI tft;
 TwoWire mlx_i2c(0);
 ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
+WebServer webserver;
+std::string ssid = "";
+std::string ip_addr = "";
+bool last_streaming_state = false;
 
 void init_tft(TFT_eSPI &tft)
 {
+    Serial.println("Initializing TFT display...");
     tft.init();
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
     tft.setTextSize(1);
+    tft.setSwapBytes(true);
 }
 
 void wait_for_serial()
@@ -57,6 +66,7 @@ void wait_for_serial()
     while (!Serial)
         delay(10);
     delay(100);
+    Serial.println("Serial communication initialized.");
 }
 
 void draw_thermo_legend_to_ui(TFT_eSPI &tft, const RGB8Color &min_temp_color,
@@ -87,9 +97,35 @@ void init_mlx()
     mlx.setRefreshRate(DEFAULT_MLX_REFRESH_RATE);
 }
 
+void get_wifi_info(std::string &ssid_out, std::string &ip_addr_out)
+{
+    if (WiFi.status() == WL_CONNECTED) {
+        ssid_out = WiFi.SSID().c_str();
+        Serial.println(("Connected to WiFi network: " + ssid_out).c_str());
+
+        IPAddress ip = WiFi.localIP();
+        char ip_buffer[20];
+        std::snprintf(ip_buffer, sizeof(ip_buffer), "%d.%d.%d.%d",
+                      ip[0], ip[1], ip[2], ip[3]);
+        ip_addr_out = ip_buffer;
+    } else {
+        ssid_out = "No WiFi";
+        ip_addr_out = "-";
+        Serial.println("WiFi is not connected.");
+    }
+}
+
+void init_web_server(WebServer &webserver)
+{
+    Serial.println("Initializing web server...");
+    webserver.init();
+}
+
 void setup()
 {
     wait_for_serial();
+    init_web_server(webserver);
+    get_wifi_info(ssid, ip_addr);
     init_tft(tft);
     draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
     init_mlx();
@@ -122,10 +158,22 @@ void loop()
     mlx_utils::convert_raw_temp_to_color(raw_frame, rgb_frame, tds);
 
     algorithms::bilinear_upscale(rgb_frame, upscaled_frame);
+    webserver.update_frame(upscaled_frame, tis);
 
-    draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
-                                                       BILINEAR_INTERPOLATION_FACTOR,
-                                                       common_colors::CYAN, common_colors::RED);
-    draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
-    draw_utils::draw_live_ui(tft, tds, tis);
+    // Check if streaming is active
+    if (webserver.is_streaming()) {
+        // Display streaming UI instead of live thermo data
+        bool force_black_bg = !last_streaming_state; // Only force black background on the first frame of streaming
+        draw_utils::draw_streaming_ui(tft, ssid.c_str(), ip_addr.c_str(), tis, force_black_bg);
+    } else {
+        draw_utils::insert_min_max_temp_crosses_into_image(upscaled_frame, tis,
+                                                           BILINEAR_INTERPOLATION_FACTOR,
+                                                           common_colors::CYAN, common_colors::RED);
+
+        draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
+        draw_utils::draw_live_ui(tft, tds, tis, ssid, ip_addr);
+    }
+
+    last_streaming_state = webserver.is_streaming();
+
 }

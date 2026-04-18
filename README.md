@@ -8,6 +8,8 @@ TFT Bugfix
 
 Line 76
 
+ // 17 db works with the antenna mod (ring antenna -56dbm); 19.5 dbm without antenna ring: -64dbm; -51dbm with antenna ring (suddenly works now, but does not init sometimes)
+
 // ESP32 specific SPI port selection - only SPI2_HOST available on C3
 #if ESP_ARDUINO_VERSION_MAJOR < 3
   #define SPI_PORT 2 //SPI2_HOST

@@ -1,0 +1,7 @@
+camera:
+  - platform: generic
+    name: Thermocam Snapshot
+    still_image_url: "http://THERMOCAM_IP/snapshot.jpg"
+    # Optional: set to 0 to always fetch on view, or a few seconds for caching
+    # framerate: 1
+

@@ -1,23 +1,30 @@
 #pragma once
 
 #include <Adafruit_MLX90640.h>
+#include <algorithm>
+#include <cstdio>
+#include <numeric>
+#include <string>
 
+#include "algorithms.h"
 #include "color.h"
+#include "config.h"
 #include "types/common_types.h"
 #include "types/container_types.h"
 
 namespace thermocam::mlx_utils {
 
-std::string get_serial_number(Adafruit_MLX90640 &mlx)
+inline std::string get_serial_number(Adafruit_MLX90640 &mlx)
 {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0') << std::setw(4) << mlx.serialNumber[0] << '-' 
-                                        << std::setw(4) << mlx.serialNumber[1] << '-' 
-                                        << std::setw(4) << mlx.serialNumber[2];
-    return ss.str();
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "%04x-%04x-%04x",
+                  static_cast<unsigned>(mlx.serialNumber[0]),
+                  static_cast<unsigned>(mlx.serialNumber[1]),
+                  static_cast<unsigned>(mlx.serialNumber[2]));
+    return std::string(buf);
 }
 
-void update_thermo_image_stats_from_frame(ThermoImage &raw_frame, ThermoImageStats &tis)
+inline void update_thermo_image_stats_from_frame(const ThermoImage &raw_frame, ThermoImageStats &tis)
 {
     tis.average_temp = std::accumulate(raw_frame.begin(), raw_frame.end(), 0.0f) / raw_frame.size();
     auto [min_temp_frame, max_temp_frame] = std::minmax_element(raw_frame.begin(), raw_frame.end());
@@ -27,7 +34,7 @@ void update_thermo_image_stats_from_frame(ThermoImage &raw_frame, ThermoImageSta
     tis.max_temp = *max_temp_frame;
 }
 
-void convert_raw_temp_to_color(ThermoImage &raw_frame, RGBThermoImage &rgb_frame, ThermoDisplaySettings &tds)
+inline void convert_raw_temp_to_color(const ThermoImage &raw_frame, RGBThermoImage &rgb_frame, const ThermoDisplaySettings &tds)
 {
     size_t rgb_array_index = 0;
     for (const auto &temp_at_pixel : raw_frame) {

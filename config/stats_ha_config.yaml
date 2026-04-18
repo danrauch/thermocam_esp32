@@ -1,0 +1,16 @@
+rest:
+  - resource: http://192.168.0.117/stats  # Markdown-Links entfernen!
+    scan_interval: 5
+    sensor:
+      - name: "Thermocam Min Temperature"
+        value_template: "{{ value_json.min | float(0) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-low
+      - name: "Thermocam Max Temperature"
+        value_template: "{{ value_json.max | float(0) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer-high
+      - name: "Thermocam Avg Temperature"
+        value_template: "{{ value_json.avg | float(0) }}"
+        unit_of_measurement: "°C"
+        icon: mdi:thermometer

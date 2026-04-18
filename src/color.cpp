@@ -32,20 +32,33 @@ RGB8Color RGB8Color::operator*(double rhs) const
 
 RGB8Color RGB8Color::lerp(const RGB8Color &from_color, const RGB8Color &to_color, float fraction)
 {
-    return algorithms::lerp(from_color, to_color, fraction);
+    if (fraction <= 0.0f) {
+        return from_color;
+    }
+    if (fraction >= 1.0f) {
+        return to_color;
+    }
+
+    const auto r = static_cast<int>(from_color.r() + (to_color.r() - from_color.r()) * fraction);
+    const auto g = static_cast<int>(from_color.g() + (to_color.g() - from_color.g()) * fraction);
+    const auto b = static_cast<int>(from_color.b() + (to_color.b() - from_color.b()) * fraction);
+
+    return RGB8Color::create_from_rgb(r, g, b);
 }
 
 std::vector<RGB8Color> RGB8Color::discrete_blend(const RGB8Color &from_color, const RGB8Color &to_color, uint32_t steps)
-{       
+{
+    if (steps <= 1) {
+        return steps == 1 ? std::vector<RGB8Color>{from_color} : std::vector<RGB8Color>{};
+    }
     std::vector<RGB8Color> color_vector;
     color_vector.reserve(steps);
-    float step = 1.0 / (steps - 1);
-    float fraction = 0.0;
-    for (int current_step = 0; current_step < steps; current_step++) {
+    float step = 1.0f / static_cast<float>(steps - 1);
+    float fraction = 0.0f;
+    for (uint32_t current_step = 0; current_step < steps; current_step++) {
         color_vector.emplace_back(algorithms::lerp(from_color, to_color, fraction));
         fraction += step;
     }
-
     return color_vector;
 }
 
