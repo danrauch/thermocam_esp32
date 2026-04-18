@@ -219,19 +219,30 @@ int WebServer::handle_stream(httpd_req *req)
 IPAddress WebServer::connect_wifi()
 {
     WiFi.mode(WIFI_STA);
+    WiFi.setTxPower(WIFI_POWER_19_5dBm);
+    WiFi.disconnect(true, true); // clear any old saved STA configuration
+    WiFi.setHostname("thermocam");
     WiFi.begin(wifi_config::WIFI_SSID, wifi_config::WIFI_PASSWORD);
 
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        if constexpr (DEBUG_OUTPUT) {
-            Serial.print(".");
-        }
+    int status = WiFi.waitForConnectResult(5000);  // 5s timeout
+    if (status != WL_CONNECTED) {
+        // Retry once in case the first attempt is affected by stale state.
+        WiFi.disconnect(true, true);
+        delay(1000);
+        WiFi.begin(wifi_config::WIFI_SSID, wifi_config::WIFI_PASSWORD);
+        status = WiFi.waitForConnectResult(5000);
     }
 
     if constexpr (DEBUG_OUTPUT) {
-        Serial.println();
-        Serial.print("WiFi connected, IP address: ");
-        Serial.println(WiFi.localIP());
+        Serial.print("WiFi connect result: ");
+        Serial.println(status);
+        if (status == WL_CONNECTED) {
+            Serial.print("WiFi connected, IP address: ");
+            Serial.println(WiFi.localIP());
+        } else {
+            Serial.print("WiFi failed to connect to SSID: ");
+            Serial.println(wifi_config::WIFI_SSID);
+        }
     }
 
     return WiFi.localIP();

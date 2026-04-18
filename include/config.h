@@ -7,14 +7,26 @@
 
 namespace thermocam {
 
-constexpr bool DEBUG_OUTPUT = false;
+constexpr bool DEBUG_OUTPUT = true;
 
 constexpr uint32_t SERIAL_BAUDRATE = 115200;
 
 constexpr uint32_t I2C_FREQUENCY_IN_HZ = 1'000'000;
-constexpr uint8_t I2C_SDA_PIN = 6;
-constexpr uint8_t I2C_SCL_PIN = 7;
-constexpr uint8_t UI_BTN_PIN = 2;
+// I2C pins (defined in platformio.ini per board)
+#ifndef CUSTOM_I2C_SDA_PIN
+#define CUSTOM_I2C_SDA_PIN 8
+#endif
+constexpr uint8_t I2C_SDA_PIN = CUSTOM_I2C_SDA_PIN;
+
+#ifndef CUSTOM_I2C_SCL_PIN
+#define CUSTOM_I2C_SCL_PIN 9
+#endif
+constexpr uint8_t I2C_SCL_PIN = CUSTOM_I2C_SCL_PIN;
+
+#ifndef CUSTOM_UI_BTN_PIN
+#define CUSTOM_UI_BTN_PIN 0
+#endif
+constexpr uint8_t UI_BTN_PIN = CUSTOM_UI_BTN_PIN;
 
 constexpr uint8_t MLX_SENSOR_WIDTH = 32;
 constexpr uint8_t MLX_SENSOR_HEIGHT = 24;

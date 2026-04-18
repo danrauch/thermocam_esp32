@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <string>
 
 #include <TFT_eSPI.h>
 
@@ -19,12 +20,45 @@ inline void draw_arrow(TFT_eSPI &tft, int16_t x, int16_t y, int16_t size, int16_
     tft.fillTriangle(x, y, x + size, y, x + size / 2, y + size + 2, color);
 }
 
-inline void draw_live_ui(TFT_eSPI &tft, const ThermoDisplaySettings &tds, const ThermoImageStats &tis)
+inline std::string truncate_text_with_ellipsis(TFT_eSPI &tft, const std::string &text, int max_width, int font_size)
+{
+    const int text_width = tft.textWidth(text.c_str(), font_size);
+    
+    if (text_width <= max_width) {
+        return text;
+    }
+    
+    const int ellipsis_width = tft.textWidth("...", font_size);
+    const int available_width = max_width - ellipsis_width;
+    
+    if (available_width > 0) {
+        int truncate_length = (text.length() * available_width) / text_width;
+        truncate_length = std::max(1, truncate_length);
+        return text.substr(0, truncate_length) + "...";
+    }
+    
+    return "...";
+}
+
+inline void draw_live_ui(TFT_eSPI &tft, const ThermoDisplaySettings &tds, const ThermoImageStats &tis,
+                         const std::string &ssid, const std::string &ip_addr)
 {
     tft.fillRect(0, 185, 240, 53, TFT_BLACK);
 
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
     tft.drawNumber(tis.frame_index, 3, 185, 2);
+
+    // Draw WiFi info between frame index and "A"
+    // Truncate SSID if it gets too close to IP address (within 5px of x=120)
+    const int ssid_start_x = 40;
+    const int ip_start_x = 120;
+    const int min_spacing = 5;
+    const int max_ssid_width = ip_start_x - ssid_start_x - min_spacing;
+    
+    std::string ssid_display = truncate_text_with_ellipsis(tft, ssid, max_ssid_width, 2);
+    
+    tft.drawString(ssid_display.c_str(), ssid_start_x, 185, 2);
+    tft.drawString(ip_addr.c_str(), ip_start_x, 185, 2);
 
     char min_temp_buf[16];
     char max_temp_buf[16];

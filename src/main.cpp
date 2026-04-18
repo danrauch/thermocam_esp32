@@ -46,11 +46,13 @@ TFT_eSPI tft;
 TwoWire mlx_i2c(0);
 ArduinoPin button1(UI_BTN_PIN, PinMode::IN_PULLDOWN);
 WebServer webserver;
-std::string ssid, ip_addr;
+std::string ssid = "";
+std::string ip_addr = "";
 bool last_streaming_state = false;
 
 void init_tft(TFT_eSPI &tft)
 {
+    Serial.println("Initializing TFT display...");
     tft.init();
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_WHITE, TFT_TRANSPARENT);
@@ -64,6 +66,7 @@ void wait_for_serial()
     while (!Serial)
         delay(10);
     delay(100);
+    Serial.println("Serial communication initialized.");
 }
 
 void draw_thermo_legend_to_ui(TFT_eSPI &tft, const RGB8Color &min_temp_color,
@@ -96,19 +99,32 @@ void init_mlx()
 
 void get_wifi_info(std::string &ssid_out, std::string &ip_addr_out)
 {
-    ssid_out = WiFi.SSID().c_str();
-    
-    IPAddress ip = WiFi.localIP();
-    char ip_buffer[20];
-    std::snprintf(ip_buffer, sizeof(ip_buffer), "%d.%d.%d.%d",
-                  ip[0], ip[1], ip[2], ip[3]);
-    ip_addr_out = ip_buffer;
+    if (WiFi.status() == WL_CONNECTED) {
+        ssid_out = WiFi.SSID().c_str();
+        Serial.println(("Connected to WiFi network: " + ssid_out).c_str());
+
+        IPAddress ip = WiFi.localIP();
+        char ip_buffer[20];
+        std::snprintf(ip_buffer, sizeof(ip_buffer), "%d.%d.%d.%d",
+                      ip[0], ip[1], ip[2], ip[3]);
+        ip_addr_out = ip_buffer;
+    } else {
+        ssid_out = "No WiFi";
+        ip_addr_out = "-";
+        Serial.println("WiFi is not connected.");
+    }
+}
+
+void init_web_server(WebServer &webserver)
+{
+    Serial.println("Initializing web server...");
+    webserver.init();
 }
 
 void setup()
 {
     wait_for_serial();
-    webserver.init();
+    init_web_server(webserver);
     get_wifi_info(ssid, ip_addr);
     init_tft(tft);
     draw_thermo_legend_to_ui(tft, MIN_TEMP_COLOR, MAX_TEMP_COLOR, COLOR_BLEND_STEPS);
@@ -155,7 +171,7 @@ void loop()
                                                            common_colors::CYAN, common_colors::RED);
 
         draw_utils::draw_thermo_image(tft, upscaled_frame, DRAW_INTERPOLATION_FACTOR, tds.mirror_mode);
-        draw_utils::draw_live_ui(tft, tds, tis);
+        draw_utils::draw_live_ui(tft, tds, tis, ssid, ip_addr);
     }
 
     last_streaming_state = webserver.is_streaming();
